@@ -1,0 +1,75 @@
+\chapter{Introduction}
+
+At the beginning of the year 2000, multicore processors started to be produced. This decision was taken due to the microarchitectural limitations and, higher power consumption and heat dissipation involved on improving the performance of a single CPU~\cite{Trono:2015}. Since then, the number of cores in a single chip is growing every year. Today, desktops and even cellphone processors are multicore. Besides, servers normally have many processors and each one is multicore. 
+
+The simplest architecture for multiprocessors systems are based on a single bus, i.e., one or more processors and memory modules use the same bus for communication. In this architecture, every memory word can be read with the same latency. Hence, they are named UMA (Uniform Memory Access). However, these architectures have a scalability problem as the number of CPUs grow, as all communication needs to pass by the single bus.
+
+One alternative is to replace the single bus with multiple nodes, where each node is a multiprocessor connected directly to a local memory module \cite{Gaud:2015}. These architectures are called NUMA (Non-Uniform Memory Access) and are becoming dominant in servers~\cite{Calciu:2017}. In NUMA machines, programs have access to the entire memory. In a transparent way, data can be stored in the local node or in a node that belongs to other processor (remote node). Interconnect links between nodes are asymmetric and have different bandwidths~\cite{Lepers:2015}. Hence, the location of the data plays an important role in the performance.
+
+
+Accessing a remote node implies higher latency, making the access time non-uniform, i.e., depends on the location of the data. 
+
+In order to better exploit the parallelism available in these modern architectures,  software must be parallel and scalable \cite{Grahn:2010}. An important issue that arises in parallel programming is thread synchronization, and it is the major cause that prevents the scalability of applications~\cite{David:2013}. Synchronization is necessary when multiple concurrent threads need to access at the same time a shared variable and, at least one thread needs to write to this shared variable. If there is no synchronization, a race condition can happen~\cite{Netzer:1992}, possibly leading to non-deterministic results~\cite{Trono:2015}. The block of code that needs to be protected in order to not be accessed at the same time by different processes is called \emph{critical section} \cite{Raynal:2013}. 
+
+Mutual-exclusion locks are one of the most used abstractions to protect critical sections~\cite{Fraser2007}. However, the semantics of locks is not intuitive.  Programmers need to explicitly acquire and release  locks, making the source code hard to read and debug~\cite{Anthes:2014}. Besides, if more than one lock was acquired in a critical section, they need to be released in the same order, to avoid \emph{deadlocks}~\cite{Herlihy:2008}. The performance of locks depends on the size of the critical section that it protects. Coarse-grained locks are easy to program but the parallelism is limited~\cite{TL2}. On the other hand, fine-grained locks provide good performance but they are hard to use~\cite{Dice:2007}.
+
+An alternative abstraction to replace mutual-exclusion locks in  parallel programming is the \emph{Transactional Memory} (TM)~\cite{Harris:2010, Grahn:2010}, in which critical-sections are accessed using transactions similar to the ones available in databases. With TM, instead of explicitly acquiring and releasing locks, the programmer only needs to delimit the block of code that he wants to be executed atomically as a transaction. The TM runtime is responsible to ensure a consistent execution, e.g., without deadlocks and race conditions. A transaction that has executed without conflicts can commit, i.e., update the memory with the new values. If a conflict was detected an abort is executed and a transaction is reinitialized until a commit is possible. Thus, an impression of atomicity is given to the programmer. Although there are TMs implemented in hardware (HTM) and in software (STM), this thesis focuses on the study of STM, where transaction consistency is guaranteed by a software library. An advantage of an implementation in software is that it is more flexible and not dependent on hardware. Also, it does not have the same resource limitations as in hardware~\cite{Grahn:2010}.%. Even if hardware support is available, implementation in software still be necessary for larger transactions~\cite{Anthes:2014}.
+
+\section{Motivation}\label{sect:motivation}
+%Many researches on schedulers
+%Current microarchitectures placement of threads and data is important for performance
+%Try to use sharing-aware mapping inside STM, since STM has precise information about shared variables
+
+There are many compilers and programming languages that already support transactional memory constructs, such as C++ (since the standard C++11\footnote{\url{https://gcc.gnu.org/wiki/TransactionalMemory}}), Haskell, Scala and .NET Framework~\cite{Gramoli:2017}. Besides, some researches already showed that STM can outperform locks in some scenarios \cite{Dice:2007, STMNOTToy}. Unfortunately, there are scenarios where the overhead added by the management of internal metadata of the STM or a high number of aborts, limits good performance~\cite{Gramoli:2014}. Due to these limitations, improving performance of STM is an active research area. 
+There are several proposals for increasing the performance of STM systems. However, the majority of them focus on reducing the number of conflicts (transactional aborts). One technique is the use of a transactional scheduler, acting proactively, using heuristics to prevent conflicts and to decide \emph{when} and \emph{where} a transaction should be executed~\cite{Sanzo:2017}.
+
+Current multicore architectures have complex memory hierarchies and different latencies for memory accesses. Hence, a thread placement that improves the use of memory controllers and data locality is important to achieve good performance. A technique called \emph{sharing-aware mapping}\footnote{This research field is also known as topology-aware mapping~\cite{Jeannot:2013,Unat:2017}.}~\cite{Cruz:2018} aims to map threads to cores and memory pages to NUMA nodes considering their memory access behavior. Since STM is used to synchronize data accessed by multiple threads, an efficient mapping will help to make better usage of caches and memory controllers, hence improving the overall performance. Besides, STM provides interesting mapping opportunities since the STM runtime has precise information about memory areas that are shared between threads, their respective memory addresses, and the intensity with which they are accessed by each thread. Hence, contrary to prior works on sharing-aware thread mapping, it is not necessary to keep track of all memory access of the applications, only the STM accesses. Therefore, the proposed mechanism will have a low overhead and can perform sharing-aware thread mapping accurately for STM applications.
+
+
+\section{Contributions}
+
+%The main objective of this thesis is to improve the performance of STM applications by using the information about transactional shared variables inside the STM runtime to performing an efficient sharing-aware mapping. 
+The main objective of this thesis is to investigate the use of sharing-aware mapping in the context of STM. %The main intuition is that STM has precise information about shared variables and has native access to all information need to characterize the sharing behavior, i.e., accessed memory address and the intensity with which each thread accesses them. 
+	Contrary to previous sharing-aware mapping proposals that rely on memory traces of the entire application, our proposal has lower overhead and better accuracy because only memory accesses that are in fact shared between threads are traced. Beyond that, this sharing-aware mapping will improve the overall performance of STM applications by improving the cache usage and interconnection traffic. More specifically, this thesis makes the following contributions:
+
+\begin{itemize}
+	\item We developed a low overhead mechanism to \textbf{detect the sharing behavior of STM applications}, by tracking and analyzing how threads perform STM operations~(Chapter~\ref{chap:mechanism}).
+	
+	\item We made an \textbf{in-depth characterization of STM applications}, regarding memory access behavior, using the proposed mechanism. This characterization is used to define the suitability for a thread mapping based on communication behavior and defining which type of mapping policy is more appropriate (static or dynamic)~(Chapter~\ref{chap:charact}).
+	
+	\item We show how a \textbf{static thread mapping} (where threads are mapped to cores at the beginning of execution, and never migrated) is sufficient to improve the overall performance of the majority of STM applications~(Chapter~\ref{chap:sharAwareThreadMap}, Section~\ref{sect:staticThreadMap}). 
+	
+	\item We extend the proposed mechanism to perform \textbf{online detecting sharing behavior and mapping}. %detect the sharing behavior of STM application to perform thread mapping during the execution of the STM application~(online). 
+	We developed a heuristic to disable the mechanism if it determines that the application will not benefit from a new thread mapping~(Chapter~\ref{chap:sharAwareThreadMap}, Section~\ref{sect:onlineThreadMapping}). 
+	
+%	\item A heuristic to disable the online mechanism, if it predicts no improvements of a new mapping. 
+%	\item We show how the proposed mechanism to perform online sharing-aware thread mapping can be extended to include \textbf{sharing-aware data mapping}~(Appendix~\ref{chap:sharAwareDataMap}).
+\end{itemize}
+
+
+\section{Publications}
+
+The following papers were published during the PhD program and contain material that is relevant to this thesis:
+
+\begin{enumerate}
+	\item \underline{Douglas P. Pasqualin}, Matthias Diener, André R. Du Bois, Maurício L. Pilla. \textbf{``Thread Affinity in Software Transactional Memory.''}  19th International Symposium on Parallel and Distributed Computing (ISPDC), July 2020 \cite{Pasqualin:2020}.
+	
+	\item \underline{Douglas P. Pasqualin}, Matthias Diener, André R. Du Bois, Maurício L. Pilla. \textbf{``Online Sharing-Aware Thread Mapping in Software Transactional Memory.''}  32nd International Symposium on Computer Architecture and High Performance Computing (SBAC-PAD), September 2020 \cite{Pasqualin:2020:2}.
+	
+	\item \underline{Douglas P. Pasqualin}, Matthias Diener, André R. Du Bois, Maurício L. Pilla. \textbf{``Characterizing the Sharing Behavior of Applications using  Software Transactional Memory.''} Benchmarking, Measuring, and Optimizing (Bench'20). November 2020. (\textbf{Best Paper Award} and \textbf{Award for Excellence for Reproducible Research}) \cite{Pasqualin:Bench}.
+\end{enumerate}
+
+The following papers were also submitted for publication and are currently under peer-review:
+
+\begin{enumerate}
+	\item \underline{Douglas P. Pasqualin}, Matthias Diener, André R. Du Bois, Maurício L. Pilla. \textbf{``STMap: Sharing-Aware Thread Mapping in Software Transactional Memory.''} Journal of Parallel and Distributed Computing (JPDC).
+	
+	\item \underline{Douglas P. Pasqualin}, Matthias Diener, André R. Du Bois, Maurício L. Pilla. \textbf{``Sharing-Aware Data Mapping in Software Transactional Memory.''} SAMOS XXI - International Conference on Embedded Computer Systems: Architectures, Modeling and Simulation. 
+\end{enumerate}
+
+
+\section{Document organization}
+
+The remainder of this thesis is organized as follows. Chapter~\ref{chap:background} presents the background of different topics used in this thesis, such as TM and sharing-aware mapping. Chapter~\ref{chap:related} presents the works related to the thesis subject. Also, we discuss the differences between our contributions with related work. Chapter~\ref{chap:mechanism} presents the first contribution of this thesis, i.e, a mechanism to detected the sharing behavior of STM applications, by tracking and analyzing how threads perform STM operations. Chapter~\ref{chap:charact} uses the proposed mechanism of Chapter~\ref{chap:mechanism} to perform an in-depth characterization of \texttt{STAMP}, a frequently used TM benchmark suite, regarding memory access behavior. It includes information about the suitability for thread mapping of each \texttt{STAMP} application, its communication pattern, and its dynamic behavior, among others. Chapter~\ref{chap:sharAwareThreadMap} shows how to use the proposed mechanism to perform static and online thread mapping based on the memory access behavior of STM operations. %Chapter~\ref{chap:sharAwareDataMap} show how to extend the online thread mapping to include sharing-aware data mapping. 
+Finally, Chapter~\ref{chap:conclusion} presents the conclusion and future work. We also included Appendix~\ref{chap:sharAwareDataMap} which shows how to extend the online sharing-aware thread mapping mechanism to include data mapping. 
+

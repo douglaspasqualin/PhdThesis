@@ -1,0 +1,299 @@
+\documentclass[tese,capa,english]{texufpel}
+
+\usepackage[utf8]{inputenc} % acentuacao
+\usepackage{graphicx} % para inserir figuras
+\usepackage{subfigure}
+\usepackage[alf,abnt-emphasize=bf, abnt-etal-list=0,bibjustif]{abntex2cite}
+\usepackage[table]{xcolor}
+\usepackage{booktabs}
+\usepackage{tabularx} %breakline in table
+\usepackage{amsmath,amssymb,amsfonts,flushend}
+\usepackage{algorithm}
+\usepackage[noend]{algpseudocode}
+\usepackage{listings}
+\usepackage{courier}
+\usepackage{pdfpages}
+\usepackage[activate={true,nocompatibility},final,tracking=true,kerning=true,spacing=true,factor=1100,stretch=10,shrink=10]{microtype}
+
+\microtypecontext{spacing=nonfrench}
+\hypersetup{
+	pdfauthor={Douglas Pereira Pasqualin}, 
+	pdftitle={Sharing-Aware Thread Mapping in Software Transactional Memory},
+	pdfsubject={PhD Thesis}, 
+	pdfdisplaydoctitle=true,
+    pdfkeywords={Software Transactional Memory, Sharing-aware, Thread Mapping, Communication}, 
+    pdfcreator={LaTeX, using PPGC/UFPel class}, 
+	pdfnewwindow=true,
+	bookmarksopen=false,
+    pdfstartview={Fit}, 
+	hidelinks, % Remove coloração e caixas
+	unicode=true,   %Permite acentuação no bookmark
+	linktoc=all %Habilita link no nome e página do sumário
+}
+
+\pdfinfo{
+	/Institution (Universidade Federal de Pelotas)
+	/Course (Programa de Pós-Graduação em Computação)
+	/Advisor (André Rauber Du Bois)
+    /Co-Advisor-1 (Matthias Diener)
+    /Co-Advisor-2 (Maurício Lima Pilla)
+    /Defense-Date (28 April 2021)
+}
+
+\renewcommand*{\backref}[1]{}
+\renewcommand*{\backrefalt}[4]{%
+	\ifcase #1 \relax%
+		\or         (Cited on page~#2).%
+		\else      (Cited on pages~#2).%
+	\fi
+}
+
+\definecolor{myBlue}{HTML}{0000e6}
+\definecolor{myGray}{HTML}{969696}
+\definecolor{myCyan}{HTML}{2e92c7}
+\lstdefinelanguage{STM}
+{
+	basicstyle=\linespread{0.95}\ttfamily\normalsize,
+	numberstyle=\tiny,
+	keywords=[1]{foreach, if, else, in, int, void, long, typedef, struct, case, break, switch},
+	keywordstyle=[1]\color{myBlue}\ttfamily,
+	keywords=[2]{T, address_entry,  NUM_THREADS, HASH_TABLE_SIZE},
+	keywordstyle=[2]\color{myCyan}\ttfamily,
+	keywords=[3]{volatile, unsigned, \&\&},
+	keywordstyle=[3]\color{black}\bfseries,	
+	commentstyle=\color{myGray}\ttfamily,
+	morecomment=[s]{/*}{*/},
+	morestring=[b]",
+	showstringspaces=false,
+	sensitive=false,
+	numbers = left, 
+	breaklines=true,
+	numbersep=5pt,
+	xleftmargin=2em,
+	frame=lines,    
+}
+\lstset{aboveskip=-5pt,belowskip=-5pt}
+
+\newenvironment{conditions}
+{\par\vspace{\abovedisplayskip}\noindent\begin{tabular}{>{$}l<{$} @{${}={}$} l}}
+	{\end{tabular}\par\vspace{\belowdisplayskip}}
+
+\newcommand{\thNumber}{num\_threads}
+
+\newcommand{\halfPage}{0.47}
+\newcommand{\oneQPage}{0.23}
+\newcommand{\oneTPage}{0.31}
+\newcommand{\oneFPage}{0.175}
+\newcommand{\fullImageWidth}{0.95}
+
+%\newcommand{\todo}[1]{\textbf{\color{red}{TODO: #1}}}
+%\newcommand{\new}[1]{\textbf{\color{blue}{#1}}}
+
+\newcommand{\citeNamesYearPar}[1]{\citeauthoronline{#1}~\citeyearpar{#1}}
+
+\makeatletter
+\algnewcommand{\LineComment}[1]{\Statex \hskip\ALG@thistlm \textcolor{myCyan}{ \(\triangleright\) #1}}
+\renewcommand\algorithmiccomment[1]{\textcolor{myCyan}{\hfill\(\triangleright\) #1}}
+
+\makeatother
+
+\unidade{Technology Development Center}
+\programa{Graduate Program in Computing}
+\curso{Computer Science}
+
+\unidadeeng{Technology Development Center}
+\programaeng{Postgraduate Program in Computing}
+\cursoeng{Computer Science}
+
+\title{Sharing-Aware Thread Mapping in Software Transactional Memory}
+
+\author{Pasqualin}{Douglas Pereira}
+\advisor[Dr.]{Du Bois}{André Rauber}
+\coadvisor[Dr.]{Diener}{Matthias}
+\coadvisor[Dr.]{Pilla}{Maurício Lima}
+
+%Palavras-chave em EN_US
+\keyword{Software Transactional Memory}
+\keyword{Sharing-aware}
+\keyword{Thread Mapping}
+%\keyword{Data mapping}
+\keyword{Communication}
+
+%Palavras-chave em PT_BR
+\keywordeng{Memória Transacional em Software}
+\keywordeng{Sensibilidade ao compartilhamento}
+\keywordeng{Mapeamento de thread}
+%\keywordeng{Mapeamento de dado}
+\keywordeng{Comunicação}
+
+\begin{document}
+
+\maketitle 
+
+\sloppy
+
+%\fichacatalografica
+\includepdf{ficha.pdf}
+
+%Composição da Banca Examinadora
+\begin{aprovacao}{28 April 2021} %data da banca por extenso
+\noindent Dr. André Rauber Du Bois (advisor)\\
+PhD in Computer Science from the Heriot-Watt University, Scotland.\\[1cm]
+
+%\noindent Dr. Matthias Diener (coadvisor)\\
+%PhD in Computer Science from the Technische Universität Berlin, Germany.\\[1cm]
+
+%\noindent Dr. Maurício Lima Pilla (coadvisor)\\
+%PhD in Computer Science from the Federal University of Rio Grande do Sul, Brazil.\\[1cm]
+
+\noindent Dr. Laércio Lima Pilla\\
+PhD in Computer Science from the Federal University of Rio Grande do Sul (UFRGS), Brazil and Université Grenoble Alpes, France.\\[1cm]
+
+\noindent Dr. Alexandro José Baldassin \\
+PhD in Computer Science from the State University of Campinas (UNICAMP), Brazil \\[1cm]
+
+\noindent Dr. Gerson Geraldo Homrich Cavalheiro\\
+PhD in Informatique Systèmes et Communications from the Institut National Polytechnique de Grenoble, France.
+\end{aprovacao}
+
+
+\begin{dedicatoria}
+	\begin{flushleft}	
+		%\sffamily\itshape 
+	%	\begin{hyphenrules}{nohyphenation}
+			This is dedicated to my wife Daiane and my son Nicolas, for their endless love and encouragement.
+	%	\end{hyphenrules}
+	\end{flushleft}		
+\end{dedicatoria}
+
+%Opcional
+\begin{agradecimentos}
+	\input{ack}
+\end{agradecimentos}
+
+%Opcional
+\begin{epigrafe}
+	\begin{flushright}	
+%	\begin{hyphenrules}{nohyphenation}		
+			``Accessing memory is more like mailing a letter than making a phone call''
+			\vspace*{0.5cm}
+			\textsc{\\(The Art of Multiprocessor Programming, page 471)}
+%	\end{hyphenrules}		
+	\end{flushright}	
+\end{epigrafe}
+
+%Resumo em inglês (no maximo 500 palavras)
+\begin{abstract}
+Software Transactional Memory (STM) is an alternative abstraction for thread synchronization in parallel programming. One advantage is simplicity since it is possible to replace the use of explicit locks with atomic blocks, while the STM runtime is responsible to ensure a consistent execution, for instance, without deadlocks and race conditions. Regarding STM performance, many studies already have been made focusing on reducing the number of transactional aborts and conflicts. However, in current multicore architectures with complex memory hierarchies, it is also important to consider where the memory of a program is allocated and how it is accessed. This thesis proposes the use of a technique called \emph{sharing-aware mapping}, which maps threads to cores and memory pages to NUMA nodes based on their memory access behavior to achieve better performance in STM systems. The first major contribution of this thesis is a mechanism to detect sharing behavior directly inside the STM library by tracking and analyzing how threads perform STM operations. The collected information can be used to perform an optimized mapping of the application's threads to cores in order to improve the efficiency of STM operations. The second contribution of this thesis is the characterization of the sharing behavior of STM applications by using information extracted from the STM runtime, providing information to guide thread mapping based on their sharing behavior. The third contribution is a mechanism to perform sharing-aware thread mapping in STM applications. We first introduce \emph{Static-SharingAware}~(SSA), which map threads to cores based on a previous analysis of the sharing behavior of STM applications. Next, we introduce STMap, an online, low overhead mechanism to detect the sharing behavior and perform the mapping directly inside the STM library, by tracking and analyzing how threads perform STM operations during the execution. In experiments with the STAMP benchmark suite and synthetic benchmarks, both mechanisms showed performance gains when compared to the default Linux scheduler. %Finally, we show how STMap can be extended to include sharing-aware data mapping.
+\end{abstract}
+
+%Resumo em PT-br (sim, está invertido) (no maximo 500 palavras)
+\begin{englishabstract}{Mapeamento de \textit{Threads} Baseado em Compartilhamento em Memórias Transacionais em Software}
+Memória Transacional em Software (MTS) é uma abstração para a sincronização de \textit{threads} na programação paralela. Uma de suas vantagens é a simplicidade, pois é possível substituir o uso de bloqueios por blocos atômicos. Além disso, a implementação de MTS é responsável por garantir uma execução consistente, por exemplo, sem \textit{deadlocks} ou condições de corrida. Com relação ao desempenho de MTS, existem muitos estudos focados na redução do número de cancelamentos. Contudo, nas atuais arquiteturas \textit{multicore}, com complexas hierarquias de memória, é também importante considerar onde a memória do programa está alocada e como ela é acessada. Esta tese propõe o uso de uma técnica chamada \emph{mapeamento baseado em compartilhamento} a qual consiste em mapear \textit{threads} para núcleos de processamento e páginas de memória para nós NUMA com base no seu padrão de acesso à memória para melhorar o desempenho de aplicações que utilizam MTS. A primeira contribuição desta tese é um mecanismo para detectar o padrão de acesso à memória em bibliotecas de MTS. Ele consiste em rastrear e analisar como \textit{threads} executam operações de MTS. As informações coletadas podem ser utilizadas para criar um mapeamento otimizado de \textit{threads} para núcleos de processamento, com o objetivo de melhorar a eficiência das operações de MTS. A segunda contribuição é a caracterização do padrão de acesso à memória de aplicações que utilizam MTS, fornecendo informações para guiar um mapeamento de \textit{threads} com base no padrão de compartilhamento da aplicação. A terceira contribuição é um mecanismo para efetuar um mapeamento de \textit{threads} baseado em compartilhamento para aplicações que utilizam MTS. Primeiramente é apresentado \emph{Static-SharingAware}~(SSA), que baseado em uma análise prévia do padrão de compartilhamento da aplicação, mapeia \textit{threads} para núcleos de processamento de forma estática. Após, é apresentado STMap, um mecanismo que opera dinamicamente e com baixa sobrecarga, com o objetivo de detectar o padrão de acesso à memoria e efetuar o mapeamento de \textit{threads} durante a execução do programa. Em experimentos com o benchmark STAMP e outras aplicações sintéticas, ambos mecanismos apresentaram ganhos de desempenho quando comparados com o escalonador padrão do Linux. %Por fim, é apresentado como o STMap pode ser estendido para incluir o mapeamento de dados basedo em compartilhamento.
+
+\end{englishabstract}
+
+%Lista de Figuras
+\listoffigures
+
+%Lista de Tabelas
+\listoftables
+
+%lista de abreviaturas e siglas
+\begin{listofabbrv}{LO-SER}
+	\item[ACC]   		Adaptive Concurrency Control
+	\item[ATS]	 		Adaptive Transaction Scheduling
+	\item[AR]			Abort Ratio
+	\item[BAT] 			Best Alternative Transaction
+	\item[CAR]   		Collision Avoidance and Resolution
+	\item[CB]			Contention Bit
+%	\item[CC]   		Concurrency Control
+	\item[CDSM]		Communication Detection in Shared Memory
+	\item[CFS]			Completely Fair Scheduler
+	\item[CI]    		Contention Intensity
+	\item[CL]			Concurrency Level
+	\item[CM]    		Contention Manager
+	\item[CMP] 		Chip Multiprocessor
+	\item[CP]			Contention Predictor
+	\item[CPU]			Central Processing Unit
+	\item[CR]			Commit Ratio
+	\item[DA]			Distinct Addresses
+	\item[DoT]			Dominant Thread
+	\item[DS]			Dynamic Serializer
+	\item[DVFS]      Dynamic Voltage and Frequency Scaling
+	\item[F2C2] 		Flux-based Feedback-driven Concurrency Control
+	\item[GC] 			Garbage Collector
+	\item[GPU]          Graphics Processing Unit
+	\item[HPC]			High Performance Computing
+	\item[HTM]			Hardware Transactional Memory
+	\item[IBS]			Instruction-Based Sampling
+	\item[kMAF]			kernel Memory Affinity Framework
+	\item[LLC] 				Last-Level Cache
+	\item[LO-SER]		Low-Overhead Serializing Algorithm
+	\item[LSA]          Lazy Snapshot Algorithm 
+	\item[LUTS]			Light-Weight User-Level Transaction Scheduler
+	\item[MAi]			Memory Affinity Interface
+	\item[MI]			Mapping Interval
+	\item[ML]			Machine Learning	
+	\item[MPI] 			Message Passing Interface
+	\item[MSE]			Mean squared error
+%	\item[Mutex] 		Mutual Exclusion
+	\item[NPB]			NAS Parallel Benchmark
+	\item[NUMA]  		Non-Uniform Memory Access
+%	\item[NumaMMa] NUMA MeMory Analyzer
+%	\item[OS]			Operating System
+	\item[PEW]			Percentage of the Effective Work
+	\item[PoCC]  		P-only Concurrency Controller 
+	\item[ProPS] 		Progressively Pessimistic Scheduling
+	\item[SC]			Saturating Counter
+	\item[SCA]			Speculative Contention Avoidance
+	\item[SI]				Sample Interval
+%	\item[SD]			Standard Deviation
+	\item[SRP] 			Success-Reward Policy
+	\item[SSER+]		Stricter Serializability
+%	\item[RBTree]		Red-Black Tree
+	\item[RS]			Read-set
+%	\item[TABARNAC]		Tools for Analyzing the Behavior of Applications Running on NUMA ArChitecture
+	\item[TBB]			Threading Building Blocks
+	\item[TCR]	 		Transaction Commit Ratio
+	\item[TCP]			Transmission Control Protocol
+	\item[TLB] 			Translation Lookaside Buffer
+	\item[TM]    		Transactional Memory	
+	\item[SOA]			Steal-on-Abort
+	\item[SSA]			Static-SharingAware
+	\item[STAMP]		Stanford Transactional Applications for Multi-Processing
+	\item[STM]   		Software Transactional Memory
+	\item[UMA]		Uniform Memory Access
+	\item[VIT]			Very Important Transaction
+	\item[WACC] 		Weighted Adaptive Concurrency Control
+	\item[WS] 			Write-set
+%	\item[WW] 			Wasted Work
+\end{listofabbrv}
+
+%Sumario
+\tableofcontents
+
+%Add chaptes
+\include{chapters/introduction}
+\include{chapters/background}
+\include{chapters/relatedWork}
+\include{chapters/mechanism}
+\include{chapters/sharingBehavior}
+\include{chapters/sharingAwareThreadMapping}
+\include{chapters/conclusion}
+
+
+%\bibliographystyle{abnt}
+\bibliographystyle{abntex2-alf}
+\bibliography{BibTexAll} 
+
+% Apêndices (Opcional) - Material produzido pelo autor
+\apendices
+\include{chapters/sharingAwareDataMapping}
+
+
+% Faz a capa do CDROM
+%\makecover
+
+\end{document}
+
